@@ -27,7 +27,5 @@ def client_update(client_id, model, train_subset, epochs, batch_size, learning_r
             loss = loss_fn(output, target)
             loss.backward()
             optimizer.step()
-            
-            print(loss.item())
 
     return model.state_dict()
