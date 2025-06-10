@@ -5,6 +5,7 @@ from torchvision import datasets, transforms
 
 from models import MNIST_CNN
 from utils import evaluate
+from client import client_update
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -20,20 +21,17 @@ global_model = MNIST_CNN()
 optimizer = torch.optim.SGD(global_model.parameters(), lr=LEARNING_RATE)
 loss_fn = nn.NLLLoss()
 
-data_loader = DataLoader(
-    Subset(train_data, range(1000)),
-    batch_size=128,
-    shuffle=True
+test_loader = DataLoader(
+    test_data
 )
 
-for epoch in range(10):
-    for idx, (features, target) in enumerate(data_loader):
-        optimizer.zero_grad()
-        out = global_model(features)
-        loss = loss_fn(out, target)
-        loss.backward()
-        optimizer.step()
+client_update(
+    0,
+    global_model,
+    train_data,
+    1,
+    128,
+    LEARNING_RATE
+)
 
-        print(loss)
-
-print(evaluate(global_model, data_loader))
+print(evaluate(global_model, test_loader))
