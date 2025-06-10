@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 
 from models import MNIST_CNN
+from utils import evaluate
 
 transform = transforms.Compose([
     transforms.ToTensor(),
@@ -20,7 +21,7 @@ optimizer = torch.optim.SGD(global_model.parameters(), lr=LEARNING_RATE)
 loss_fn = nn.NLLLoss()
 
 data_loader = DataLoader(
-    Subset(train_data, range(10000)),
+    Subset(train_data, range(1000)),
     batch_size=128,
     shuffle=True
 )
@@ -35,3 +36,4 @@ for epoch in range(10):
 
         print(loss)
 
+print(evaluate(global_model, data_loader))
