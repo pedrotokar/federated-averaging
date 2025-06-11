@@ -15,7 +15,7 @@ def load_MNIST():
 
     return train_data, test_data
 
-def evaluate(model, test_loader):
+def evaluate(model, test_loader, device):
     model.eval()
 
     test_loss = 0
@@ -23,10 +23,10 @@ def evaluate(model, test_loader):
 
     with torch.no_grad():
         for data, target in test_loader:
-            output = model(data)
-            test_loss += nn.NLLLoss(reduction="sum")(output, target).item()
+            output = model(data.to(device))
+            test_loss += nn.NLLLoss(reduction="sum")(output, target.to(device)).item()
             pred = output.argmax(dim=1, keepdim=True)
-            correct += pred.eq(target.view_as(pred)).sum().item()
+            correct += pred.eq(target.view_as(pred).to(device)).sum().item()
     
     test_loss /= len(test_loader.dataset)
     accuracy = 100 * correct / len(test_loader.dataset)

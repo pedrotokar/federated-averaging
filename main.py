@@ -21,9 +21,13 @@ BATCH_SIZE      = 128   # B
 LEARNING_RATE   = 0.01  # n
 NUM_ROUNDS      = 9
 
+#device = "cpu"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("Usando", device)
+
 train_data, test_data = load_MNIST()
 
-global_model = MNIST_CNN()
+global_model = MNIST_CNN().to(device)
 
 test_loader = DataLoader(
     test_data,
@@ -31,6 +35,7 @@ test_loader = DataLoader(
     batch_size=128,
     num_workers=10
 )
+
 
 clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=True)
 
@@ -55,13 +60,13 @@ for comm_round in range(NUM_ROUNDS):
             train_subset,
             epochs=NUM_PASSES,
             batch_size=BATCH_SIZE,
-            learning_rate=LEARNING_RATE
+            learning_rate=LEARNING_RATE,
+            device=device
         )
 
         selected_clients_lens.append(clients_lens.get(client_id))
         selected_clients_states.append(state)
 
-    
     new_global_state = server_aggregate(
         global_model.state_dict(),
         selected_clients_states,
@@ -70,7 +75,7 @@ for comm_round in range(NUM_ROUNDS):
 
     global_model.load_state_dict(new_global_state)
 
-    loss, acc = evaluate(global_model, test_loader)
+    loss, acc = evaluate(global_model, test_loader, device)
 
     print(f"Round {comm_round + 1} | Loss: {loss:.4f} | Acc: {acc:.2f}%")
 

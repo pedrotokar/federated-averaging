@@ -3,7 +3,7 @@ from torch import nn
 from torch.utils.data import DataLoader, Subset
 from models import MNIST_CNN
 
-def client_update(client_id, model, train_subset, epochs, batch_size, learning_rate):
+def client_update(client_id, model, train_subset, epochs, batch_size, learning_rate, device):
 
     print(f"  > Cliente {client_id}")
     
@@ -14,7 +14,7 @@ def client_update(client_id, model, train_subset, epochs, batch_size, learning_r
         train_subset,
         batch_size=batch_size,
         shuffle=True,
-        num_workers=2
+        num_workers=3
     )
 
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
@@ -23,8 +23,8 @@ def client_update(client_id, model, train_subset, epochs, batch_size, learning_r
     for epoch in range(epochs):
         for idx, (features, target) in enumerate(data_loader):
             optimizer.zero_grad()
-            output = model(features)
-            loss = loss_fn(output, target)
+            output = model(features.to(device))
+            loss = loss_fn(output, target.to(device))
             loss.backward()
             optimizer.step()
 
