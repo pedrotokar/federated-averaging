@@ -38,15 +38,21 @@ def distribute_data(dataset, num_clients, iid=True):
     client_lens = dict()
     
     if iid:
-        num_items = int(len(dataset) / num_clients)
-        idxs = list(range(len(dataset)))
+        idxs = np.arange(len(dataset))
         np.random.shuffle(idxs)
 
-        for i in range(num_clients):
-            start_idx = i * num_items
-            end_idx = start_idx + num_items
-            client_indices = idxs[start_idx:end_idx]
-            client_dict[i] = Subset(dataset, client_indices)
-            client_lens[i] = len(client_indices)
-            
+    else:
+        idxs = np.arange(len(dataset))
+        labels = dataset.targets
+        idxs = idxs[np.argsort(labels).numpy()]
+
+    num_items = int(len(dataset) / num_clients)
+
+    for i in range(num_clients):
+        start_idx = i * num_items
+        end_idx = start_idx + num_items
+        client_indices = idxs[start_idx:end_idx]
+        client_dict[i] = Subset(dataset, client_indices)
+        client_lens[i] = len(client_indices)
+
     return client_dict, client_lens

@@ -37,7 +37,7 @@ test_loader = DataLoader(
 )
 
 
-clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=True)
+clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=False)
 
 for comm_round in range(NUM_ROUNDS):
     m = max(int(CLIENT_FRAC * NUM_CLIENTS), 1)
