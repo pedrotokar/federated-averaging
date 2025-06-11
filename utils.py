@@ -5,6 +5,16 @@ from torchvision import datasets, transforms
 
 import numpy as np
 
+def load_MNIST():
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+        transforms.Normalize((0.1307,), (0.3081,))
+    ])
+    train_data = datasets.MNIST("./data", train=True, download=True, transform=transform)
+    test_data = datasets.MNIST("./data", train=False, download=True, transform=transform)
+
+    return train_data, test_data
+
 def evaluate(model, test_loader):
     model.eval()
 
@@ -24,7 +34,8 @@ def evaluate(model, test_loader):
     return test_loss, accuracy
 
 def distribute_data(dataset, num_clients, iid=True):
-    client_dict = {}
+    client_dict = dict()
+    client_lens = dict()
     
     if iid:
         num_items = int(len(dataset) / num_clients)
@@ -36,5 +47,6 @@ def distribute_data(dataset, num_clients, iid=True):
             end_idx = start_idx + num_items
             client_indices = idxs[start_idx:end_idx]
             client_dict[i] = Subset(dataset, client_indices)
+            client_lens[i] = len(client_indices)
             
-    return client_dict
+    return client_dict, client_lens

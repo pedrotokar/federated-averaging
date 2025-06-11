@@ -7,34 +7,32 @@ import copy
 import numpy as np
 
 from models import MNIST_CNN
-from utils import evaluate, distribute_data
+from utils import load_MNIST, evaluate, distribute_data
 from client import client_update
-
-
-transform = transforms.Compose([
-    transforms.ToTensor(),
-    transforms.Normalize((0.1307,), (0.3081,))
-])
-train_data = datasets.MNIST("./data", train=True, download=True, transform=transform)
-test_data = datasets.MNIST("./data", train=False, download=True, transform=transform)
+from server import server_aggregate
 
 
 NUM_CLIENTS     = 100   # K
 
 CLIENT_FRAC     = 0.1   # C
-NUM_PASSES      = 1     # E
+NUM_PASSES      = 3     # E
 BATCH_SIZE      = 128   # B
 
 LEARNING_RATE   = 0.01  # n
-NUM_ROUNDS      = 1
+NUM_ROUNDS      = 9
+
+train_data, test_data = load_MNIST()
 
 global_model = MNIST_CNN()
 
 test_loader = DataLoader(
-    test_data
+    test_data,
+    shuffle=False,
+    batch_size=128,
+    num_workers=10
 )
 
-clients_data = distribute_data(train_data, NUM_CLIENTS, iid=True)
+clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=True)
 
 for comm_round in range(NUM_ROUNDS):
     m = max(int(CLIENT_FRAC * NUM_CLIENTS), 1)
@@ -42,18 +40,37 @@ for comm_round in range(NUM_ROUNDS):
 
     print(clients)
 
+    selected_clients_states = list()
+    selected_clients_lens = list()
+
     for client_id in clients:
 
         local_model = copy.deepcopy(global_model)
 
-        client_update(
+        train_subset = clients_data.get(client_id)
+
+        state = client_update(
             client_id,
             local_model,
-            clients_data.get(client_id),
+            train_subset,
             epochs=NUM_PASSES,
             batch_size=BATCH_SIZE,
             learning_rate=LEARNING_RATE
         )
 
+        selected_clients_lens.append(clients_lens.get(client_id))
+        selected_clients_states.append(state)
 
-print(evaluate(global_model, test_loader))
+    
+    new_global_state = server_aggregate(
+        global_model.state_dict(),
+        selected_clients_states,
+        selected_clients_lens
+    )
+
+    global_model.load_state_dict(new_global_state)
+
+    loss, acc = evaluate(global_model, test_loader)
+
+    print(f"Round {comm_round + 1} | Loss: {loss:.4f} | Acc: {acc:.2f}%")
+
