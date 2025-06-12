@@ -36,7 +36,9 @@ def evaluate(model, test_loader, device):
 def distribute_data(dataset, num_clients, iid=True):
     client_dict = dict()
     client_lens = dict()
-    
+
+    num_items = int(len(dataset) / num_clients)
+
     if iid:
         idxs = np.arange(len(dataset))
         np.random.shuffle(idxs)
@@ -46,7 +48,11 @@ def distribute_data(dataset, num_clients, iid=True):
         labels = dataset.targets
         idxs = idxs[np.argsort(labels).numpy()]
 
-    num_items = int(len(dataset) / num_clients)
+        shards = np.arange(num_clients * 2)
+        np.random.shuffle(shards)
+        idxs = idxs.reshape(num_clients * 2, -1)
+        idxs = idxs[shards]
+        idxs = idxs.reshape(-1)
 
     for i in range(num_clients):
         start_idx = i * num_items
@@ -54,5 +60,6 @@ def distribute_data(dataset, num_clients, iid=True):
         client_indices = idxs[start_idx:end_idx]
         client_dict[i] = Subset(dataset, client_indices)
         client_lens[i] = len(client_indices)
+
 
     return client_dict, client_lens

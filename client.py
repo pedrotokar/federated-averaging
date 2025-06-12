@@ -6,7 +6,7 @@ from models import MNIST_CNN
 def client_update(client_id, model, train_subset, epochs, batch_size, learning_rate, device):
 
     print(f"  > Cliente {client_id}")
-    
+
     if batch_size == float("inf"):
         batch_size = len(train_subset)
 

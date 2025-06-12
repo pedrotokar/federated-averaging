@@ -15,11 +15,12 @@ from server import server_aggregate
 NUM_CLIENTS     = 100   # K
 
 CLIENT_FRAC     = 0.1   # C
-NUM_PASSES      = 3     # E
+NUM_PASSES      = 50     # E
 BATCH_SIZE      = 128   # B
 
 LEARNING_RATE   = 0.01  # n
-NUM_ROUNDS      = 9
+NUM_ROUNDS      = 100
+IID             = False
 
 #device = "cpu"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -37,7 +38,8 @@ test_loader = DataLoader(
 )
 
 
-clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=False)
+clients_data, clients_lens = distribute_data(train_data, NUM_CLIENTS, iid=IID)
+loss_hist = []
 
 for comm_round in range(NUM_ROUNDS):
     m = max(int(CLIENT_FRAC * NUM_CLIENTS), 1)
@@ -76,6 +78,8 @@ for comm_round in range(NUM_ROUNDS):
     global_model.load_state_dict(new_global_state)
 
     loss, acc = evaluate(global_model, test_loader, device)
-
+    loss_hist.append((loss, acc))
     print(f"Round {comm_round + 1} | Loss: {loss:.4f} | Acc: {acc:.2f}%")
 
+with open(f"results/mnist_{'iid' if IID else 'noniid'}_N{NUM_CLIENTS}_C{CLIENT_FRAC}_E{NUM_PASSES}_B{BATCH_SIZE}.txt", "w") as f:
+    f.writelines([f"{loss[0]},{loss[1]}\n" for loss in loss_hist])
