@@ -14,13 +14,13 @@ from server import server_aggregate
 
 NUM_CLIENTS     = 100   # K
 
-CLIENT_FRAC     = 0.1   # C
-NUM_PASSES      = 50     # E
+CLIENT_FRAC     = 0.75   # C
+NUM_PASSES      = 1     # E
 BATCH_SIZE      = 128   # B
 
 LEARNING_RATE   = 0.01  # n
 NUM_ROUNDS      = 100
-IID             = False
+IID             = True
 
 #device = "cpu"
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
